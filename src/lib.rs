@@ -4,6 +4,9 @@ use std::path::PathBuf;
 use image::io::Reader as ImageReader;
 use image::GenericImageView;
 
+mod energy;
+use energy::get_energy_img;
+
 pub struct Config {
     pub infile: PathBuf,
     pub new_width: u32,
@@ -44,6 +47,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn seamcarve<T: Clone + GenericImageView>(img: &T, _new_height: u32, _new_width: u32) -> T {
+    get_energy_img(img);
     img.clone()
 }
 
