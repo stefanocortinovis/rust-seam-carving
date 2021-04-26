@@ -4,8 +4,9 @@ use std::path::PathBuf;
 use image::io::Reader as ImageReader;
 use image::GenericImageView;
 
-mod energy;
-use energy::get_energy_img;
+mod array;
+pub mod energy;
+mod seam;
 
 pub struct Config {
     pub infile: PathBuf,
@@ -41,30 +42,16 @@ impl Config {
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let img_original = ImageReader::open(&config.infile)?.decode()?;
-    let img_carved = seamcarve(&img_original, config.new_height, config.new_width);
+    let img_carved = seamcarve(&img_original, config.new_height, config.new_width)?;
     img_carved.save(config.get_outfile())?;
     Ok(())
 }
 
-pub fn seamcarve<T: Clone + GenericImageView>(img: &T, _new_height: u32, _new_width: u32) -> T {
-    get_energy_img(img);
-    img.clone()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn no_carving() {
-        let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
-            .unwrap()
-            .decode()
-            .unwrap();
-        let (new_width, new_height) = img_original.dimensions();
-        assert_eq!(
-            img_original,
-            seamcarve(&img_original, new_height, new_width)
-        );
-    }
+pub fn seamcarve<T: Clone + GenericImageView>(
+    img: &T,
+    _new_height: u32,
+    _new_width: u32,
+) -> Result<T, &'static str> {
+    energy::get_energy_img(img)?;
+    Ok(img.clone())
 }
