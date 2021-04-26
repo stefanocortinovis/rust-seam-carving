@@ -1,8 +1,19 @@
+use std::fmt;
 use std::ops::{Index, IndexMut};
 
 pub struct Array2d<T> {
-    pub width: usize,
+    width: usize,
     pub data: Vec<T>,
+}
+
+impl<T: fmt::Debug> fmt::Debug for Array2d<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Array2d {{")?;
+        for row in self.data.chunks_exact(self.width()) {
+            writeln!(f, "{:?}", row)?;
+        }
+        writeln!(f, "}}")
+    }
 }
 
 impl<T> Array2d<T> {
@@ -11,6 +22,18 @@ impl<T> Array2d<T> {
             0 => Ok(Self { width, data }),
             _ => Err("length of data and width provided are not compatible"),
         }
+    }
+
+    pub fn width(&self) -> usize {
+        self.width
+    }
+
+    pub fn height(&self) -> usize {
+        self.data.len() / self.width()
+    }
+
+    pub fn size(&self) -> usize {
+        self.width() * self.height()
     }
 }
 
