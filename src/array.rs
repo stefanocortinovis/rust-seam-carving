@@ -1,6 +1,7 @@
 use std::fmt;
 use std::ops::{Index, IndexMut};
 
+#[derive(Eq, PartialEq)]
 pub struct Array2d<T> {
     width: usize,
     pub data: Vec<T>,
@@ -34,6 +35,22 @@ impl<T> Array2d<T> {
 
     pub fn size(&self) -> usize {
         self.width() * self.height()
+    }
+
+    // TODO: change implementation when horizontal seam introduced
+    pub fn remove_seam(&mut self, seam: Vec<usize>) -> Result<(), &'static str> {
+        if seam.len() != self.height() {
+            return Err("seam length should be equal to image height");
+        }
+        let width = self.width();
+        seam.iter()
+            .enumerate()
+            .map(|(row, &col)| row * width + col - row)
+            .for_each(|i| {
+                self.data.remove(i);
+            });
+        self.width -= 1;
+        Ok(())
     }
 }
 
@@ -80,5 +97,28 @@ mod tests {
         assert_eq!(7, arr[(0, 2)]);
         assert_eq!(8, arr[(1, 2)]);
         assert_eq!(9, arr[(2, 2)]);
+    }
+
+    #[test]
+    fn indexing_mut() {
+        let mut arr = Array2d::new(3, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]).unwrap();
+        assert_eq!(1, arr[(0, 0)]);
+        arr[(0, 0)] = 2;
+        assert_eq!(2, arr[(0, 0)]);
+    }
+
+    #[test]
+    fn seam_removal() {
+        let mut arr = Array2d::new(3, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]).unwrap();
+        assert_eq!(
+            Array2d::new(3, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]).unwrap(),
+            arr
+        );
+        let seam = vec![1, 2, 1];
+        arr.remove_seam(seam).unwrap();
+        assert_eq!(
+            Array2d::new(2, vec![1, 3, 4, 5, 7, 9]).unwrap(),
+            arr
+        );
     }
 }
