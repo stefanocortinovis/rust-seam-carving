@@ -1,16 +1,17 @@
 use image::{GenericImageView, Pixel};
 use num_traits::ToPrimitive;
 
-pub fn get_energy_img<T: GenericImageView>(img: &T) -> Vec<Vec<u32>> {
+use crate::array::Array2d;
+
+pub fn get_energy_img<T: GenericImageView>(img: &T) -> Result<Array2d<u32>, &'static str> {
     let (width, height) = img.dimensions();
     let mut v = vec![];
-    for x in 0..width {
-        v.push(vec![]);
-        for y in 0..height {
-            v[x as usize].push(get_energy_pixel(img, x, y))
+    for y in 0..height {
+        for x in 0..width {
+            v.push(get_energy_pixel(img, x, y))
         }
     }
-    v
+    Array2d::new(width as usize, v)
 }
 
 fn get_energy_pixel<T: GenericImageView>(img: &T, x: u32, y: u32) -> u32 {
@@ -60,14 +61,12 @@ mod tests {
         img.put_pixel(0, 3, Rgb([255, 255, 51]));
         img.put_pixel(1, 3, Rgb([255, 255, 153]));
         img.put_pixel(2, 3, Rgb([255, 255, 255]));
-        let energy = get_energy_img(&img);
+        let energy = get_energy_img(&img).unwrap();
         assert_eq!(
-            energy,
             vec![
-                vec![20808, 20808, 20809, 20808],
-                vec![52020, 52225, 52024, 52225],
-                vec![20808, 21220, 20809, 21220]
-            ]
+                20808, 52020, 20808, 20808, 52225, 21220, 20809, 52024, 20809, 20808, 52225, 21220
+            ],
+            energy.data
         );
     }
 }
