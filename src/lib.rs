@@ -4,9 +4,9 @@ use std::path::PathBuf;
 use image::io::Reader as ImageReader;
 use image::GenericImageView;
 
-mod array;
+pub mod array;
 pub mod energy;
-mod seam;
+pub mod seam;
 
 pub struct Config {
     pub infile: PathBuf,
