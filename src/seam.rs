@@ -1,63 +1,33 @@
 use crate::array::Array2d;
 
 pub fn find_vertical_seam(energy: &Array2d<u32>) -> Vec<usize> {
-    let mut cost = Array2d::new(energy.width(), vec![None; energy.size()]).unwrap();
-    let mut path = Array2d::new(energy.width(), vec![None; energy.size()]).unwrap();
-    for i in 0..cost.width() {
-        for j in 0..cost.height() {
-            find_vertical_seam_memoized(energy, &mut cost, &mut path, i, j);
+    let (width, height, size) = (energy.width(), energy.height(), energy.size());
+    let mut cost = Array2d::new(width, vec![0; size]).unwrap();
+    let mut path = Array2d::new(width, vec![0; size - width]).unwrap();
+    let mut seam = Vec::with_capacity(height);
+    for i in 0..width {
+        cost[(i, height - 1)] = energy[(i, height - 1)];
+    }
+    for j in (0..(height - 1)).rev() {
+        for i in 0..width {
+            let (mut best_index, mut min_cost) = (i, cost[(i, j + 1)]);
+            if i > 0 && cost[(i - 1, j + 1)] < min_cost {
+                best_index = i - 1;
+                min_cost = cost[(i - 1, j + 1)]
+            }
+            if i < width - 1 && cost[(i + 1, j + 1)] < min_cost {
+                best_index = i + 1;
+                min_cost = cost[(i + 1, j + 1)]
+            }
+            path[(i, j)] = best_index;
+            cost[(i, j)] = energy[(i, j)] + min_cost;
         }
     }
-    let mut seam = Vec::with_capacity(energy.height());
-    seam.push(
-        (0..energy.width())
-            .min_by_key(|&i| {
-                cost[(i, 0)].unwrap() // maybe better expect?
-            })
-            .unwrap(),
-    );
-    for i in 0..(energy.height() - 1) {
-        seam.push(path[(seam[i], i)].unwrap())
+    seam.push((0..width).min_by_key(|&i| cost[(i, 0)]).unwrap());
+    for i in 0..(height - 1) {
+        seam.push(path[(seam[i], i)])
     }
     seam
-}
-
-fn find_vertical_seam_memoized(
-    energy: &Array2d<u32>,
-    cost: &mut Array2d<Option<u32>>,
-    path: &mut Array2d<Option<usize>>,
-    i: usize,
-    j: usize,
-) -> u32 {
-    let mut best_index = 0; // TODO: better initial value
-    let mut best_cost;
-    if let (Some(r), Some(s)) = (path[(i, j)], cost[(i, j)]) {
-        best_index = r;
-        best_cost = s;
-    } else if j == energy.height() - 1 {
-        best_cost = energy[(i, j)];
-    } else {
-        best_index = i;
-        best_cost = find_vertical_seam_memoized(energy, cost, path, i, j + 1);
-        if i > 0 {
-            let candidate_cost = find_vertical_seam_memoized(energy, cost, path, i - 1, j + 1);
-            if candidate_cost < best_cost {
-                best_index = i - 1;
-                best_cost = candidate_cost;
-            }
-        }
-        if i < energy.width() - 1 {
-            let candidate_cost = find_vertical_seam_memoized(energy, cost, path, i + 1, j + 1);
-            if candidate_cost < best_cost {
-                best_index = i + 1;
-                best_cost = candidate_cost;
-            }
-        }
-        best_cost += energy[(i, j)]
-    }
-    path[(i, j)] = Some(best_index);
-    cost[(i, j)] = Some(best_cost);
-    best_cost
 }
 
 #[cfg(test)]
