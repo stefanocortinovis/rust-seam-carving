@@ -13,5 +13,6 @@ target/
 # VSCode workspace configuration
 .vscode/
 
-# Image carved during tests
+# Images generted during tests
 img/Broadway_tower_edit_carved.jpg
+img/Broadway_tower_edit_energy.jpg
