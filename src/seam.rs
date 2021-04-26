@@ -35,7 +35,7 @@ fn find_vertical_seam_memoized(
         best_index = r;
         best_cost = s;
     } else if j == energy.height() - 1 {
-            best_cost = energy[(i, j)];
+        best_cost = energy[(i, j)];
     } else {
         best_index = i;
         best_cost = find_vertical_seam_memoized(energy, cost, path, i, j + 1);
