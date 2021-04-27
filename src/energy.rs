@@ -1,9 +1,9 @@
-use image::{GenericImageView, Pixel};
+use image::{Pixel, Rgb};
 use num_traits::ToPrimitive;
 
 use crate::array::Array2d;
 
-pub fn get_energy_img<T: GenericImageView>(img: &T) -> Result<Array2d<u32>, &'static str> {
+pub fn get_energy_img(img: &Array2d<Rgb<u8>>) -> Result<Array2d<u32>, &'static str> {
     let (width, height) = img.dimensions();
     let mut v = vec![];
     for y in 0..height {
@@ -14,14 +14,14 @@ pub fn get_energy_img<T: GenericImageView>(img: &T) -> Result<Array2d<u32>, &'st
     Array2d::new(width as usize, v)
 }
 
-fn get_energy_pixel<T: GenericImageView>(img: &T, x: u32, y: u32) -> u32 {
+fn get_energy_pixel(img: &Array2d<Rgb<u8>>, x: usize, y: usize) -> u32 {
     let (width, height) = img.dimensions();
     let above = y.checked_sub(1).unwrap_or(height - 1);
     let below = (y + 1) % height;
     let left = x.checked_sub(1).unwrap_or(width - 1);
     let right = (x + 1) % width;
-    squared_diff_pixels(img.get_pixel(x, above), img.get_pixel(x, below))
-        + squared_diff_pixels(img.get_pixel(left, y), img.get_pixel(right, y))
+    squared_diff_pixels(img[(x, above)], img[(x, below)])
+        + squared_diff_pixels(img[(left, y)], img[(right, y)])
 }
 
 fn squared_diff_pixels<T: Pixel>(pixel_1: T, pixel_2: T) -> u32 {
@@ -44,11 +44,11 @@ fn squared_diff_channels<T: ToPrimitive>(channel_1: &T, channel_2: &T) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use image::{ImageBuffer, Rgb};
+    use image::{Rgb, RgbImage};
 
     #[test]
     fn energy_1() {
-        let mut img = ImageBuffer::new(3, 4);
+        let mut img = RgbImage::new(3, 4);
         img.put_pixel(0, 0, Rgb([255, 101, 51]));
         img.put_pixel(1, 0, Rgb([255, 101, 153]));
         img.put_pixel(2, 0, Rgb([255, 101, 255]));
@@ -61,7 +61,8 @@ mod tests {
         img.put_pixel(0, 3, Rgb([255, 255, 51]));
         img.put_pixel(1, 3, Rgb([255, 255, 153]));
         img.put_pixel(2, 3, Rgb([255, 255, 255]));
-        let energy = get_energy_img(&img).unwrap();
+        let img_array = Array2d::from_image(&img).unwrap();
+        let energy = get_energy_img(&img_array).unwrap();
 
         #[rustfmt::skip]
         assert_eq!(
@@ -77,7 +78,7 @@ mod tests {
 
     #[test]
     fn energy_2() {
-        let mut img = ImageBuffer::new(6, 5);
+        let mut img = RgbImage::new(6, 5);
         img.put_pixel(0, 0, Rgb([78, 209, 79]));
         img.put_pixel(1, 0, Rgb([63, 118, 247]));
         img.put_pixel(2, 0, Rgb([92, 175, 95]));
@@ -108,7 +109,8 @@ mod tests {
         img.put_pixel(3, 4, Rgb([163, 166, 246]));
         img.put_pixel(4, 4, Rgb([79, 125, 246]));
         img.put_pixel(5, 4, Rgb([211, 201, 98]));
-        let energy = get_energy_img(&img).unwrap();
+        let img_array = Array2d::from_image(&img).unwrap();
+        let energy = get_energy_img(&img_array).unwrap();
 
         #[rustfmt::skip]
         assert_eq!(

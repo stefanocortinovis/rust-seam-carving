@@ -2,7 +2,7 @@ use std::error::Error;
 use std::path::PathBuf;
 
 use image::io::Reader as ImageReader;
-use image::GenericImageView;
+use image::RgbImage;
 
 pub mod array;
 pub mod energy;
@@ -41,17 +41,18 @@ impl Config {
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let img_original = ImageReader::open(&config.infile)?.decode()?;
+    let img_original = ImageReader::open(&config.infile)?.decode()?.to_rgb8();
     let img_carved = seamcarve(&img_original, config.new_height, config.new_width)?;
     img_carved.save(config.get_outfile())?;
     Ok(())
 }
 
-pub fn seamcarve<T: Clone + GenericImageView>(
-    img: &T,
+pub fn seamcarve(
+    img: &RgbImage,
     _new_height: u32,
     _new_width: u32,
-) -> Result<T, &'static str> {
-    energy::get_energy_img(img)?;
-    Ok(img.clone())
+) -> Result<RgbImage, &'static str> {
+    let img = array::Array2d::from_image(img)?;
+    energy::get_energy_img(&img)?;
+    Ok(img.to_image())
 }

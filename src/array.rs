@@ -1,6 +1,8 @@
 use std::fmt;
 use std::ops::{Index, IndexMut};
 
+use image::{Rgb, RgbImage};
+
 #[derive(Eq, PartialEq)]
 pub struct Array2d<T> {
     width: usize,
@@ -37,19 +39,41 @@ impl<T> Array2d<T> {
         self.width() * self.height()
     }
 
+    pub fn dimensions(&self) -> (usize, usize) {
+        (self.width(), self.height())
+    }
+
     // TODO: change implementation when horizontal seam introduced
-    pub fn remove_seam(&mut self, seam: &Vec<usize>) -> Result<(), &'static str> {
+    pub fn remove_seam(&mut self, seam: &[usize]) -> Result<(), &'static str> {
         if seam.len() != self.height() {
             return Err("seam length should be equal to image height");
         }
         let width = self.width();
-        seam.iter()
-            .enumerate()
-            .for_each(|(row, &col)| {
-                self.data.remove(row * width + col - row);
-            });
+        seam.iter().enumerate().for_each(|(row, &col)| {
+            self.data.remove(row * width + col - row);
+        });
         self.width -= 1;
         Ok(())
+    }
+}
+
+impl Array2d<Rgb<u8>> {
+    pub fn from_image(img: &RgbImage) -> Result<Self, &'static str> {
+        let width = img.dimensions().0 as usize;
+        let mut data = Vec::new();
+        img.pixels().for_each(|&p| data.push(p));
+        Ok(Self { width, data })
+    }
+
+    pub fn to_image(&self) -> RgbImage {
+        let (width, height) = self.dimensions();
+        let mut img = RgbImage::new(width as u32, height as u32);
+        for (i, &p) in self.data.iter().enumerate() {
+            // TODO: implement iterator
+            let (x, y) = (i % width, i / width);
+            img.put_pixel(x as u32, y as u32, p);
+        }
+        img
     }
 }
 
