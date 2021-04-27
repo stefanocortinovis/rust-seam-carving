@@ -38,16 +38,15 @@ impl<T> Array2d<T> {
     }
 
     // TODO: change implementation when horizontal seam introduced
-    pub fn remove_seam(&mut self, seam: Vec<usize>) -> Result<(), &'static str> {
+    pub fn remove_seam(&mut self, seam: &Vec<usize>) -> Result<(), &'static str> {
         if seam.len() != self.height() {
             return Err("seam length should be equal to image height");
         }
         let width = self.width();
         seam.iter()
             .enumerate()
-            .map(|(row, &col)| row * width + col - row)
-            .for_each(|i| {
-                self.data.remove(i);
+            .for_each(|(row, &col)| {
+                self.data.remove(row * width + col - row);
             });
         self.width -= 1;
         Ok(())
@@ -115,10 +114,7 @@ mod tests {
             arr
         );
         let seam = vec![1, 2, 1];
-        arr.remove_seam(seam).unwrap();
-        assert_eq!(
-            Array2d::new(2, vec![1, 3, 4, 5, 7, 9]).unwrap(),
-            arr
-        );
+        arr.remove_seam(&seam).unwrap();
+        assert_eq!(Array2d::new(2, vec![1, 3, 4, 5, 7, 9]).unwrap(), arr);
     }
 }
