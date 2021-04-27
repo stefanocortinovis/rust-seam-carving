@@ -42,17 +42,25 @@ impl Config {
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let img_original = ImageReader::open(&config.infile)?.decode()?.to_rgb8();
-    let img_carved = seamcarve(&img_original, config.new_height, config.new_width)?;
+    let img_carved = seamcarve(&img_original, config.new_width, config.new_height)?;
     img_carved.save(config.get_outfile())?;
     Ok(())
 }
 
 pub fn seamcarve(
     img: &RgbImage,
+    new_width: u32,
     _new_height: u32,
-    _new_width: u32,
 ) -> Result<RgbImage, &'static str> {
-    let img = array::Array2d::from_image(img)?;
-    energy::get_energy_img(&img)?;
+    // TODO: validate new_height and new_width
+    let width = img.dimensions().0;
+    let vertical_to_remove = width - new_width;
+    let mut img = array::Array2d::from_image(img)?;
+    for _ in 0..vertical_to_remove {
+        // TODO: inefficient, update energy only locally
+        let energy_map = energy::get_energy_img(&img)?;
+        let seam = seam::find_vertical_seam(&energy_map);
+        img.remove_seam(&seam)?;
+    }
     Ok(img.to_image())
 }

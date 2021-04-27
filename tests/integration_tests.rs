@@ -37,6 +37,23 @@ fn no_carving() {
     let (new_width, new_height) = img_original.dimensions();
     assert_eq!(
         img_original,
-        rsc::seamcarve(&img_original, new_height, new_width).unwrap()
+        rsc::seamcarve(&img_original, new_width, new_height).unwrap()
     );
+}
+
+#[test]
+#[ignore]
+fn carving_width() {
+    // dimensions: 1428 x 968
+    let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
+        .unwrap()
+        .decode()
+        .unwrap()
+        .to_rgb8();
+    let (new_width, new_height) = (957, img_original.dimensions().1);
+    let img_carved = rsc::seamcarve(&img_original, new_width, new_height).unwrap();
+    img_carved
+        .save("./img/Broadway_tower_edit_carved_width.jpg")
+        .unwrap();
+    assert_eq!((new_width, new_height), img_carved.dimensions());
 }
