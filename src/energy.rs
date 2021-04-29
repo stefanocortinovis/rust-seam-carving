@@ -5,13 +5,13 @@ use crate::array::Array2d;
 
 pub fn get_energy_img(img: &Array2d<Rgb<u8>>) -> Result<Array2d<u32>, &'static str> {
     let (width, height) = img.dimensions();
-    let mut v = vec![];
+    let mut e = vec![];
     for y in 0..height {
         for x in 0..width {
-            v.push(get_energy_pixel(img, x, y))
+            e.push(get_energy_pixel(img, x, y))
         }
     }
-    Array2d::new(width as usize, v)
+    Array2d::new(width as usize, e)
 }
 
 fn get_energy_pixel(img: &Array2d<Rgb<u8>>, x: usize, y: usize) -> u32 {
