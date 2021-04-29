@@ -62,7 +62,9 @@ impl Array2d<Rgb<u8>> {
         }
         img
     }
+}
 
+impl<T: Copy> Array2d<T> {
     // TODO: change implementation when horizontal seam introduced
     pub fn remove_seam(&mut self, seam: &[usize]) -> Result<(), &'static str> {
         if seam.len() != self.height() {
@@ -139,15 +141,15 @@ mod tests {
         assert_eq!(2, arr[(0, 0)]);
     }
 
-    // #[test]
-    // fn seam_removal() {
-    //     let mut arr = Array2d::new(3, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]).unwrap();
-    //     assert_eq!(
-    //         Array2d::new(3, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]).unwrap(),
-    //         arr
-    //     );
-    //     let seam = vec![1, 2, 1];
-    //     arr.remove_seam(&seam).unwrap();
-    //     assert_eq!(Array2d::new(2, vec![1, 3, 4, 5, 7, 9]).unwrap(), arr);
-    // }
+    #[test]
+    fn seam_removal() {
+        let mut arr = Array2d::new(3, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]).unwrap();
+        assert_eq!(
+            Array2d::new(3, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]).unwrap(),
+            arr
+        );
+        let seam = vec![1, 2, 1];
+        arr.remove_seam(&seam).unwrap();
+        assert_eq!(Array2d::new(2, vec![1, 3, 4, 5, 7, 9]).unwrap(), arr);
+    }
 }
