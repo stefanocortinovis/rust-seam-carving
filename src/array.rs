@@ -73,6 +73,18 @@ impl Array2d<Rgb<u8>> {
 }
 
 impl<T: Copy> Array2d<T> {
+    pub fn transpose(&mut self) {
+        let (width, height) = self.dimensions();
+        let mut new_data = Vec::new();
+        for x in 0..width {
+            for y in 0..height {
+                new_data.push(self[(x, y)])
+            }
+        }
+        self.width = height;
+        self.data = new_data;
+    }
+
     // TODO: change implementation when horizontal seam introduced
     pub fn remove_seam(&mut self, seam: &[usize]) -> Result<(), &'static str> {
         if seam.len() != self.height() {
@@ -147,6 +159,16 @@ mod tests {
         assert_eq!(1, arr[(0, 0)]);
         arr[(0, 0)] = 2;
         assert_eq!(2, arr[(0, 0)]);
+    }
+
+    #[test]
+    fn transposition() {
+        let mut arr = Array2d::new(3, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]).unwrap();
+        arr.transpose();
+        assert_eq!(
+            Array2d::new(3, vec![1, 4, 7, 2, 5, 8, 3, 6, 9]).unwrap(),
+            arr
+        );
     }
 
     #[test]
