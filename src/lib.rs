@@ -50,16 +50,27 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 pub fn seamcarve(
     img: &RgbImage,
     new_width: u32,
-    _new_height: u32,
+    new_height: u32,
 ) -> Result<RgbImage, &'static str> {
-    let width = img.dimensions().0;
+    let (width, height) = img.dimensions();
     let vertical_to_remove = width - new_width;
+    let horizontal_to_remove = height - new_height;
     let mut img = array::Array2d::from_image(img)?;
     let mut energy_map = energy::get_energy_img(&img)?;
     for _ in 0..vertical_to_remove {
         let seam = seam::find_vertical_seam(&energy_map);
         img.remove_seam(&seam)?;
         energy::update_energy_img(&mut energy_map, &img, &seam)?;
+    }
+    if horizontal_to_remove > 0 {
+        img.transpose();
+        energy_map.transpose();
+        for _ in 0..horizontal_to_remove {
+            let seam = seam::find_vertical_seam(&energy_map);
+            img.remove_seam(&seam)?;
+            energy::update_energy_img(&mut energy_map, &img, &seam)?;
+        }
+        img.transpose();
     }
     Ok(img.to_image())
 }
