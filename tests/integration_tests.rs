@@ -17,7 +17,7 @@ fn energy_map() {
     let img_array = rsc::array::Array2d::from_image(&img_original).unwrap();
     let energy = rsc::energy::get_energy_img(&img_array).unwrap();
     let mut energy_vec = vec![];
-    for p in &energy.data {
+    for p in energy.raw_data() {
         energy_vec.push(((*p as f64) / SCALING * (u8::MAX as f64)) as u8)
     }
     let energy_img = GrayImage::from_raw(width, height, energy_vec).unwrap();

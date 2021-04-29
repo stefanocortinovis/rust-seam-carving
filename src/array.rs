@@ -6,7 +6,7 @@ use image::{Rgb, RgbImage};
 #[derive(Eq, PartialEq)]
 pub struct Array2d<T> {
     width: usize,
-    pub data: Vec<T>,
+    data: Vec<T>,
 }
 
 impl<T: fmt::Debug> fmt::Debug for Array2d<T> {
@@ -41,6 +41,14 @@ impl<T> Array2d<T> {
 
     pub fn dimensions(&self) -> (usize, usize) {
         (self.width(), self.height())
+    }
+
+    pub fn raw_data(&self) -> &[T] {
+        &self.data
+    }
+
+    pub fn raw_data_mut(&mut self) -> &mut [T] {
+        &mut self.data
     }
 }
 
