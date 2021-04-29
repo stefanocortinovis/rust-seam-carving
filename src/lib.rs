@@ -52,15 +52,14 @@ pub fn seamcarve(
     new_width: u32,
     _new_height: u32,
 ) -> Result<RgbImage, &'static str> {
-    // TODO: validate new_height and new_width
     let width = img.dimensions().0;
     let vertical_to_remove = width - new_width;
     let mut img = array::Array2d::from_image(img)?;
+    let mut energy_map = energy::get_energy_img(&img)?;
     for _ in 0..vertical_to_remove {
-        // TODO: inefficient, update energy only locally
-        let energy_map = energy::get_energy_img(&img)?;
         let seam = seam::find_vertical_seam(&energy_map);
         img.remove_seam(&seam)?;
+        energy::update_energy_img(&mut energy_map, &img, &seam)?;
     }
     Ok(img.to_image())
 }
