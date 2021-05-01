@@ -6,6 +6,32 @@ use rsc;
 const SCALING: f64 = 2000f64;
 
 #[test]
+#[should_panic]
+fn wider() {
+    let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
+        .unwrap()
+        .decode()
+        .unwrap()
+        .to_rgb8();
+    let (original_width, original_height) = img_original.dimensions();
+    let (new_width, new_height) = (original_width + 1000, original_height);
+    rsc::seamcarve(&img_original, new_width, new_height).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn taller() {
+    let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
+        .unwrap()
+        .decode()
+        .unwrap()
+        .to_rgb8();
+    let (original_width, original_height) = img_original.dimensions();
+    let (new_width, new_height) = (original_width, original_height + 1000);
+    rsc::seamcarve(&img_original, new_width, new_height).unwrap();
+}
+
+#[test]
 #[ignore]
 fn energy_map() {
     let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
