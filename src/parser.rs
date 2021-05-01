@@ -10,7 +10,7 @@ pub struct Config {
 impl Config {
     pub fn new(args: &[String]) -> Result<Self, Box<dyn Error>> {
         if args.len() < 4 {
-            Err("Usage: rsc /path/to/img.jpg new_width new_height".into())
+            Err("Usage: rsc /path/to/img new_width new_height".into())
         } else {
             let infile: PathBuf = args[1].parse()?;
             let new_width: u32 = args[2].parse()?;
