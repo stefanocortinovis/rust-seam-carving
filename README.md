@@ -1,6 +1,7 @@
 # Rust Seam Carving
 
-![CI](https://github.com/scortino/rust-seam-carving/workflows/CI/badge.svg) 
+![CI](https://github.com/scortino/rust-seam-carving/workflows/CI/badge.svg)
+[![codecov](https://codecov.io/gh/scortino/rust-seam-carving/branch/master/graph/badge.svg?token=AAMV751422)](https://codecov.io/gh/scortino/rust-seam-carving)
 
 A Rust executable to perform content-aware image resizing using [seam carving](https://en.wikipedia.org/wiki/Seam_carving).
 
