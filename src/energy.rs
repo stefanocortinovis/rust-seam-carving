@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::mem;
 
 use image::{Pixel, Rgb};
@@ -5,7 +6,7 @@ use num_traits::ToPrimitive;
 
 use crate::array::Array2d;
 
-pub fn get_energy_img(img: &Array2d<Rgb<u8>>) -> Result<Array2d<u32>, &'static str> {
+pub fn get_energy_img(img: &Array2d<Rgb<u8>>) -> Result<Array2d<u32>, Box<dyn Error>> {
     let (width, height) = img.dimensions();
     let mut e = vec![];
     for y in 0..height {
@@ -20,7 +21,7 @@ pub fn update_energy_img(
     energy: &mut Array2d<u32>,
     img: &Array2d<Rgb<u8>>,
     seam: &[usize],
-) -> Result<(), &'static str> {
+) -> Result<(), Box<dyn Error>> {
     energy.remove_seam(&seam)?;
     let (width, height) = img.dimensions(); // seam already removed
     let (mut first, mut last) = (seam[0], seam[height - 1]); // fine even if last on right boundary

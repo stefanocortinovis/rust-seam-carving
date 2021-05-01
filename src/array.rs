@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fmt;
 use std::ops::{Index, IndexMut};
 
@@ -36,10 +37,15 @@ impl<T> IndexMut<(usize, usize)> for Array2d<T> {
 }
 
 impl<T> Array2d<T> {
-    pub fn new(width: usize, data: Vec<T>) -> Result<Self, &'static str> {
+    pub fn new(width: usize, data: Vec<T>) -> Result<Self, Box<dyn Error>> {
         match data.len() % width {
             0 => Ok(Self { width, data }),
-            _ => Err("length of data and width provided are not compatible"),
+            _ => Err(format!(
+                "length of data must be divisible by width, got {} and {}",
+                data.len(),
+                width
+            )
+            .into()),
         }
     }
 
@@ -82,10 +88,15 @@ impl<T: Copy> Array2d<T> {
     }
 
     // TODO: change implementation when horizontal seam introduced
-    pub fn remove_seam(&mut self, seam: &[usize]) -> Result<(), &'static str> {
+    pub fn remove_seam(&mut self, seam: &[usize]) -> Result<(), Box<dyn Error>> {
         let (width, height) = self.dimensions();
         if seam.len() != height {
-            return Err("seam length should be equal to image height");
+            return Err(format!(
+                "seam length and image height should be equal, got {} and {}",
+                seam.len(),
+                height
+            )
+            .into());
         }
 
         // Copy to new array instead of modifying in place, approximately 3x faster in release binary

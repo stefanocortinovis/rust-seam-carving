@@ -26,24 +26,20 @@ pub fn seamcarve(
     let mut energy_map = energy::get_energy_img(&img_array)?;
     let mut seam;
 
-    let vertical_to_remove = width.checked_sub(new_width).ok_or_else(|| {
-        format!(
-            "new_width cannot be greater than original_width, got {} and {}",
-            new_width, width
-        )
-    })?;
+    let vertical_to_remove = width.checked_sub(new_width).ok_or(format!(
+        "new_width cannot be greater than original_width, got {} and {}",
+        new_width, width
+    ))?;
     for _ in 0..vertical_to_remove {
         seam = seam::find_vertical_seam(&energy_map);
         img_array.remove_seam(&seam)?;
         energy::update_energy_img(&mut energy_map, &img_array, &seam)?;
     }
 
-    let horizontal_to_remove = height.checked_sub(new_height).ok_or_else(|| {
-        format!(
-            "new_height cannot be greater than original_height, got {} and {}",
-            new_height, height
-        )
-    })?;
+    let horizontal_to_remove = height.checked_sub(new_height).ok_or(format!(
+        "new_height cannot be greater than original_height, got {} and {}",
+        new_height, height
+    ))?;
     if horizontal_to_remove > 0 {
         img_array.transpose();
         energy_map.transpose();
