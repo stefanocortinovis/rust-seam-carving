@@ -15,12 +15,12 @@ fn energy_map() {
         .to_rgb8();
     let (width, height) = img_original.dimensions();
     let img_array = rsc::array::Array2d::from_image(&img_original).unwrap();
-    let energy = rsc::energy::get_energy_img(&img_array).unwrap();
-    let mut energy_vec = vec![];
-    for p in energy.raw_data() {
-        energy_vec.push(((*p as f64) / SCALING * (u8::MAX as f64)) as u8)
+    let energy_map = rsc::energy::get_energy_img(&img_array).unwrap();
+    let mut energy_map_scaled = vec![];
+    for p in energy_map.raw_data() {
+        energy_map_scaled.push(((*p as f64) / SCALING * (u8::MAX as f64)) as u8)
     }
-    let energy_img = GrayImage::from_raw(width, height, energy_vec).unwrap();
+    let energy_img = GrayImage::from_raw(width, height, energy_map_scaled).unwrap();
     energy_img
         .save("./img/Broadway_tower_edit_energy.jpg")
         .unwrap();
@@ -43,7 +43,7 @@ fn no_carving() {
 
 #[test]
 #[ignore]
-fn carving_width() {
+fn carve_width() {
     // dimensions: 1428 x 968
     let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
         .unwrap()
@@ -60,7 +60,7 @@ fn carving_width() {
 
 #[test]
 #[ignore]
-fn carving_height() {
+fn carve_height() {
     let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
         .unwrap()
         .decode()
@@ -70,6 +70,22 @@ fn carving_height() {
     let img_carved = rsc::seamcarve(&img_original, new_width, new_height).unwrap();
     img_carved
         .save("./img/Broadway_tower_edit_carved_height.jpg")
+        .unwrap();
+    assert_eq!((new_width, new_height), img_carved.dimensions());
+}
+
+#[test]
+#[ignore]
+fn carve_both() {
+    let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
+        .unwrap()
+        .decode()
+        .unwrap()
+        .to_rgb8();
+    let (new_width, new_height) = (550, 550);
+    let img_carved = rsc::seamcarve(&img_original, new_width, new_height).unwrap();
+    img_carved
+        .save("./img/Broadway_tower_edit_carved_both.jpg")
         .unwrap();
     assert_eq!((new_width, new_height), img_carved.dimensions());
 }
