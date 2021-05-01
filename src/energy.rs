@@ -7,13 +7,13 @@ use crate::array::Array2d;
 
 pub fn get_energy_img(img: &Array2d<Rgb<u8>>) -> Result<Array2d<u32>, &'static str> {
     let (width, height) = img.dimensions();
-    let mut energy = Array2d::new(width, vec![0; img.size()], img.orientation())?;
+    let mut e = vec![];
     for y in 0..height {
         for x in 0..width {
-            energy[(x, y)] = get_energy_pixel(img, x, y);
+            e.push(get_energy_pixel(img, x, y))
         }
     }
-    Ok(energy)
+    Array2d::new(width as usize, e)
 }
 
 pub fn update_energy_img(
@@ -71,7 +71,6 @@ fn squared_diff_channels<T: ToPrimitive>(channel_1: &T, channel_2: &T) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::array::Orientation;
     use image::{Rgb, RgbImage};
 
     #[test]
@@ -89,42 +88,18 @@ mod tests {
         img.put_pixel(0, 3, Rgb([255, 255, 51]));
         img.put_pixel(1, 3, Rgb([255, 255, 153]));
         img.put_pixel(2, 3, Rgb([255, 255, 255]));
-        let mut img_array = Array2d::from_image(&img).unwrap();
+        let img_array = Array2d::from_image(&img).unwrap();
         let energy = get_energy_img(&img_array).unwrap();
 
         #[rustfmt::skip]
         assert_eq!(
-            Array2d::new(
-                3,
-                vec![
-                    20808, 52020, 20808,
-                    20808, 52225, 21220,
-                    20809, 52024, 20809,
-                    20808, 52225, 21220
-                ],
-                Orientation::Vertical
-            )
-            .unwrap(),
-            energy
-        );
-
-        img_array.transpose();
-        let energy = get_energy_img(&img_array).unwrap();
-
-        #[rustfmt::skip]
-        assert_eq!(
-            Array2d::new(
-                4,
-                vec![
-                    20808, 52020, 20808,
-                    20808, 52225, 21220,
-                    20809, 52024, 20809,
-                    20808, 52225, 21220
-                ],
-                Orientation::Horizontal
-            )
-            .unwrap(),
-            energy
+            vec![
+                20808, 52020, 20808,
+                20808, 52225, 21220,
+                20809, 52024, 20809,
+                20808, 52225, 21220
+            ],
+            energy.raw_data()
         );
     }
 
@@ -161,46 +136,22 @@ mod tests {
         img.put_pixel(3, 4, Rgb([163, 166, 246]));
         img.put_pixel(4, 4, Rgb([79, 125, 246]));
         img.put_pixel(5, 4, Rgb([211, 201, 98]));
-        let mut img_array = Array2d::from_image(&img).unwrap();
+        let img_array = Array2d::from_image(&img).unwrap();
         let energy = get_energy_img(&img_array).unwrap();
 
         #[rustfmt::skip]
         assert_eq!(
-            Array2d::new(
-                6,
-                vec![
-                    57685, 50893, 91370, 25418, 33055, 37246,
-                    15421, 56334, 22808, 54796, 11641, 25496,
-                    12344, 19236, 52030, 17708, 44735, 20663,
-                    17074, 23678, 30279, 80663, 37831, 45595,
-                    32337, 30796, 4909, 73334, 40613, 36556
-                ],
-                Orientation::Vertical
-            )
-            .unwrap(),
-            energy
-        );
-
-        img_array.transpose();
-        let energy = get_energy_img(&img_array).unwrap();
-
-        #[rustfmt::skip]
-        assert_eq!(
-            Array2d::new(
-                5,
-                vec![
-                    57685, 50893, 91370, 25418, 33055, 37246,
-                    15421, 56334, 22808, 54796, 11641, 25496,
-                    12344, 19236, 52030, 17708, 44735, 20663,
-                    17074, 23678, 30279, 80663, 37831, 45595,
-                    32337, 30796, 4909, 73334, 40613, 36556
-                ],
-                Orientation::Horizontal
-            )
-            .unwrap(),
-            energy
+            vec![
+                57685, 50893, 91370, 25418, 33055, 37246,
+                15421, 56334, 22808, 54796, 11641, 25496,
+                12344, 19236, 52030, 17708, 44735, 20663,
+                17074, 23678, 30279, 80663, 37831, 45595,
+                32337, 30796, 4909, 73334, 40613, 36556
+            ],
+            energy.raw_data()
         );
     }
+
     #[test]
     fn energy_update_1() {
         let mut img = RgbImage::new(3, 4);
@@ -225,9 +176,8 @@ mod tests {
 
         assert_eq!(energy_computed, energy_updated);
     }
-
     #[test]
-    fn energy_update_2_vertical() {
+    fn energy_update_2() {
         let mut img = RgbImage::new(6, 5);
         img.put_pixel(0, 0, Rgb([78, 209, 79]));
         img.put_pixel(1, 0, Rgb([63, 118, 247]));
@@ -278,68 +228,6 @@ mod tests {
 
         let mut img_array = Array2d::from_image(&img).unwrap();
         let seam_3 = [5, 4, 3, 2, 1];
-        let mut energy_updated = get_energy_img(&img_array).unwrap();
-        img_array.remove_seam(&seam_3).unwrap();
-        let energy_computed = get_energy_img(&img_array).unwrap();
-        update_energy_img(&mut energy_updated, &img_array, &seam_3).unwrap();
-        assert_eq!(energy_computed, energy_updated);
-    }
-
-    #[test]
-    fn energy_update_2_horizontal() {
-        let mut img = RgbImage::new(6, 5);
-        img.put_pixel(0, 0, Rgb([78, 209, 79]));
-        img.put_pixel(1, 0, Rgb([63, 118, 247]));
-        img.put_pixel(2, 0, Rgb([92, 175, 95]));
-        img.put_pixel(3, 0, Rgb([243, 73, 183]));
-        img.put_pixel(4, 0, Rgb([210, 109, 104]));
-        img.put_pixel(5, 0, Rgb([252, 101, 119]));
-        img.put_pixel(0, 1, Rgb([224, 191, 182]));
-        img.put_pixel(1, 1, Rgb([108, 89, 82]));
-        img.put_pixel(2, 1, Rgb([80, 196, 230]));
-        img.put_pixel(3, 1, Rgb([112, 156, 180]));
-        img.put_pixel(4, 1, Rgb([176, 178, 120]));
-        img.put_pixel(5, 1, Rgb([142, 151, 142]));
-        img.put_pixel(0, 2, Rgb([117, 189, 149]));
-        img.put_pixel(1, 2, Rgb([171, 231, 153]));
-        img.put_pixel(2, 2, Rgb([149, 164, 168]));
-        img.put_pixel(3, 2, Rgb([107, 119, 71]));
-        img.put_pixel(4, 2, Rgb([120, 105, 138]));
-        img.put_pixel(5, 2, Rgb([163, 174, 196]));
-        img.put_pixel(0, 3, Rgb([163, 222, 132]));
-        img.put_pixel(1, 3, Rgb([187, 117, 183]));
-        img.put_pixel(2, 3, Rgb([92, 145, 69]));
-        img.put_pixel(3, 3, Rgb([158, 143, 79]));
-        img.put_pixel(4, 3, Rgb([220, 75, 222]));
-        img.put_pixel(5, 3, Rgb([189, 73, 214]));
-        img.put_pixel(0, 4, Rgb([211, 120, 173]));
-        img.put_pixel(1, 4, Rgb([188, 218, 244]));
-        img.put_pixel(2, 4, Rgb([214, 103, 68]));
-        img.put_pixel(3, 4, Rgb([163, 166, 246]));
-        img.put_pixel(4, 4, Rgb([79, 125, 246]));
-        img.put_pixel(5, 4, Rgb([211, 201, 98]));
-
-        let mut img_array = Array2d::from_image(&img).unwrap();
-        img_array.transpose();
-        let seam_1 = [0, 1, 2, 3, 4, 3];
-        let mut energy_updated = get_energy_img(&img_array).unwrap();
-        img_array.remove_seam(&seam_1).unwrap();
-        let energy_computed = get_energy_img(&img_array).unwrap();
-        update_energy_img(&mut energy_updated, &img_array, &seam_1).unwrap();
-        assert_eq!(energy_computed, energy_updated);
-
-        let mut img_array = Array2d::from_image(&img).unwrap();
-        img_array.transpose();
-        let seam_2 = [4, 4, 3, 2, 1, 0];
-        let mut energy_updated = get_energy_img(&img_array).unwrap();
-        img_array.remove_seam(&seam_2).unwrap();
-        let energy_computed = get_energy_img(&img_array).unwrap();
-        update_energy_img(&mut energy_updated, &img_array, &seam_2).unwrap();
-        assert_eq!(energy_computed, energy_updated);
-
-        let mut img_array = Array2d::from_image(&img).unwrap();
-        img_array.transpose();
-        let seam_3 = [4, 3, 2, 2, 3, 2];
         let mut energy_updated = get_energy_img(&img_array).unwrap();
         img_array.remove_seam(&seam_3).unwrap();
         let energy_computed = get_energy_img(&img_array).unwrap();
