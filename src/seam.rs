@@ -2,8 +2,8 @@ use crate::array::Array2d;
 
 pub fn find_vertical_seam(energy: &Array2d<u32>) -> Vec<usize> {
     let (width, height, size) = (energy.width(), energy.height(), energy.size());
-    let mut cost = Array2d::new(width, vec![0; size]).unwrap();
-    let mut path = Array2d::new(width, vec![0; size - width]).unwrap();
+    let mut cost = Array2d::new(width, vec![0; size], energy.orientation()).unwrap();
+    let mut path = Array2d::new(width, vec![0; size - width], energy.orientation()).unwrap();
     let mut seam = Vec::with_capacity(height);
     for i in 0..width {
         cost[(i, height - 1)] = energy[(i, height - 1)];
