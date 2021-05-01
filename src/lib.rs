@@ -21,24 +21,28 @@ pub fn seamcarve(
     new_height: u32,
 ) -> Result<RgbImage, &'static str> {
     let (width, height) = img.dimensions();
+    
+    let mut img_array = array::Array2d::from_image(img)?;
+    let mut energy_map = energy::get_energy_img(&img_array)?;
+    let mut seam;
+    
     let vertical_to_remove = width - new_width;
-    let horizontal_to_remove = height - new_height;
-    let mut img = array::Array2d::from_image(img)?;
-    let mut energy_map = energy::get_energy_img(&img)?;
     for _ in 0..vertical_to_remove {
-        let seam = seam::find_vertical_seam(&energy_map);
-        img.remove_seam(&seam)?;
-        energy::update_energy_img(&mut energy_map, &img, &seam)?;
+        seam = seam::find_vertical_seam(&energy_map);
+        img_array.remove_seam(&seam)?;
+        energy::update_energy_img(&mut energy_map, &img_array, &seam)?;
     }
+
+    let horizontal_to_remove = height - new_height;
     if horizontal_to_remove > 0 {
-        img.transpose();
+        img_array.transpose();
         energy_map.transpose();
         for _ in 0..horizontal_to_remove {
-            let seam = seam::find_vertical_seam(&energy_map);
-            img.remove_seam(&seam)?;
-            energy::update_energy_img(&mut energy_map, &img, &seam)?;
+            seam = seam::find_vertical_seam(&energy_map);
+            img_array.remove_seam(&seam)?;
+            energy::update_energy_img(&mut energy_map, &img_array, &seam)?;
         }
-        img.transpose();
+        img_array.transpose();
     }
-    Ok(img.to_image())
+    Ok(img_array.to_image())
 }
