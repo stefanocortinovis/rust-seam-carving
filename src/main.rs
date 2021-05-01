@@ -1,6 +1,6 @@
 use std::{env, process};
 
-use rsc::Config;
+use rsc::parser::Config;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
