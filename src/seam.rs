@@ -5,27 +5,27 @@ pub fn find_vertical_seam(energy: &Array2d<u32>) -> Vec<usize> {
     let mut cost = Array2d::new(width, vec![0; size]).unwrap();
     let mut path = Array2d::new(width, vec![0; size - width]).unwrap();
     let mut seam = Vec::with_capacity(height);
-    for i in 0..width {
-        cost[(i, height - 1)] = energy[(i, height - 1)];
+    for x in 0..width {
+        cost[(x, height - 1)] = energy[(x, height - 1)];
     }
-    for j in (0..(height - 1)).rev() {
-        for i in 0..width {
-            let (mut best_index, mut min_cost) = (i, cost[(i, j + 1)]);
-            if i > 0 && cost[(i - 1, j + 1)] < min_cost {
-                best_index = i - 1;
-                min_cost = cost[(i - 1, j + 1)]
+    for y in (0..(height - 1)).rev() {
+        for x in 0..width {
+            let (mut best_index, mut min_cost) = (x, cost[(x, y + 1)]);
+            if x > 0 && cost[(x - 1, y + 1)] < min_cost {
+                best_index = x - 1;
+                min_cost = cost[(x - 1, y + 1)]
             }
-            if i < width - 1 && cost[(i + 1, j + 1)] < min_cost {
-                best_index = i + 1;
-                min_cost = cost[(i + 1, j + 1)]
+            if x < width - 1 && cost[(x + 1, y + 1)] < min_cost {
+                best_index = x + 1;
+                min_cost = cost[(x + 1, y + 1)]
             }
-            path[(i, j)] = best_index;
-            cost[(i, j)] = energy[(i, j)] + min_cost;
+            path[(x, y)] = best_index;
+            cost[(x, y)] = energy[(x, y)] + min_cost;
         }
     }
-    seam.push((0..width).min_by_key(|&i| cost[(i, 0)]).unwrap());
-    for i in 0..(height - 1) {
-        seam.push(path[(seam[i], i)])
+    seam.push((0..width).min_by_key(|&x| cost[(x, 0)]).unwrap());
+    for y in 0..(height - 1) {
+        seam.push(path[(seam[y], y)])
     }
     seam
 }
