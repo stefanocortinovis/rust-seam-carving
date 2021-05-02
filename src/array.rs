@@ -144,13 +144,30 @@ mod tests {
 
     #[test]
     fn array2d_new() {
-        let _arr = Array2d::new(3, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]).unwrap();
+        assert!(Array2d::new(3, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]).is_ok());
     }
 
     #[test]
-    #[should_panic]
     fn array2d_new_incompatible() {
-        let _arr = Array2d::new(4, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]).unwrap();
+        let width = 4;
+        let data = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
+        assert_eq!(
+            Err(format!(
+                "length of data must be divisible by width, got {} and {}",
+                data.len(),
+                width
+            )),
+            Array2d::new(width, data).map_err(|e| format!("{}", e))
+        );
+    }
+
+    #[test]
+    fn print_debug() {
+        let arr = Array2d::new(3, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]).unwrap();
+        assert_eq!(
+            String::from("Array2d {\n[1, 2, 3]\n[4, 5, 6]\n[7, 8, 9]\n}\n"),
+            format!("{:?}", arr)
+        );
     }
 
     #[test]
@@ -173,6 +190,13 @@ mod tests {
         assert_eq!(1, arr[(0, 0)]);
         arr[(0, 0)] = 2;
         assert_eq!(2, arr[(0, 0)]);
+    }
+
+    #[test]
+    fn raw_mut() {
+        let mut arr = Array2d::new(3, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]).unwrap();
+        arr.raw_data_mut()[0] = 3;
+        assert_eq!(3, arr.raw_data_mut()[0]);
     }
 
     #[test]
@@ -201,5 +225,42 @@ mod tests {
         arr.remove_seam(&seam).unwrap();
         arr.transpose();
         assert_eq!(Array2d::new(3, vec![1, 2, 3, 7, 5, 9]).unwrap(), arr);
+    }
+
+    #[test]
+    fn seam_incompatible() {
+        let mut arr = Array2d::new(3, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]).unwrap();
+        let seam = vec![1, 2, 1, 0];
+        assert_eq!(
+            Err(format!(
+                "seam length and image height should be equal, got {} and {}",
+                seam.len(),
+                arr.height()
+            )),
+            arr.remove_seam(&seam).map_err(|e| format!("{}", e))
+        );
+    }
+
+    #[test]
+    fn to_image() {
+        let width = 3;
+        let pixels: Vec<Rgb<u8>> = vec![
+            Rgb([0, 0, 0]),
+            Rgb([1, 1, 1]),
+            Rgb([2, 2, 2]),
+            Rgb([3, 3, 3]),
+            Rgb([4, 4, 4]),
+            Rgb([5, 5, 5]),
+            Rgb([6, 6, 6]),
+            Rgb([7, 7, 7]),
+            Rgb([8, 8, 8]),
+        ];
+        let arr = Array2d::new(width, pixels).unwrap();
+        let image = arr.to_image();
+        for x in 0..width {
+            for y in 0..arr.height() {
+                assert_eq!(arr[(x, y)], *image.get_pixel(x as u32, y as u32));
+            }
+        }
     }
 }
