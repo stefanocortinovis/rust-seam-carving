@@ -3,9 +3,17 @@ name = "rsc"
 version = "0.1.0"
 authors = ["scortino <scortino@pm.me>"]
 edition = "2018"
+description = "Rust implementation of the seam carving algorithm"
+readme = "README.md"
+repository = "https://github.com/scortino/rust-seam-carving"
+license-file = "LICENSE"
+keywords = ["image resizing", "image retargeting", "image seams" , "content-aware image manipulation"]
+categories = ["command-line-utilities", "multimedia::images"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 image = "0.23.14"
 num-traits = "0.2.14" 
+
+[profile.release]
+debug = true
