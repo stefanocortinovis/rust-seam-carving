@@ -8,6 +8,7 @@ pub mod energy;
 pub mod parser;
 pub mod seam;
 
+#[cfg(not(tarpaulin_include))]
 pub fn run(config: parser::Config) -> Result<(), Box<dyn Error>> {
     let img_original = ImageReader::open(&config.infile)?.decode()?.to_rgb8();
     let img_carved = seamcarve(&img_original, config.new_width, config.new_height)?;

@@ -115,3 +115,16 @@ fn carve_both() {
         .unwrap();
     assert_eq!((new_width, new_height), img_carved.dimensions());
 }
+
+#[test]
+fn carve_both_fast() {
+    let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
+        .unwrap()
+        .decode()
+        .unwrap()
+        .to_rgb8();
+    let (width, height) = img_original.dimensions();
+    let (new_width, new_height) = (width - 1, height - 1);
+    let img_carved = rsc::seamcarve(&img_original, new_width, new_height).unwrap();
+    assert_eq!((new_width, new_height), img_carved.dimensions());
+}
