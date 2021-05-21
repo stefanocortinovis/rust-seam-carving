@@ -1,5 +1,5 @@
 use image::io::Reader as ImageReader;
-use image::GrayImage;
+use image::{GrayImage, Rgb};
 
 use rsc;
 
@@ -49,6 +49,38 @@ fn energy_map() {
     let energy_img = GrayImage::from_raw(width, height, energy_map_scaled).unwrap();
     energy_img
         .save("./img/Broadway_tower_edit_energy.jpg")
+        .unwrap();
+}
+
+#[test]
+#[ignore]
+fn seam_removal_img() {
+    let mut img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
+        .unwrap()
+        .decode()
+        .unwrap()
+        .to_rgb8();
+    let width = img_original.dimensions().0 as usize;
+    let img_array = rsc::array::Array2d::from_image(&img_original).unwrap();
+    let energy_map = rsc::energy::get_energy_img(&img_array).unwrap();
+    let seam = rsc::seam::find_vertical_seam(&energy_map);
+    seam.iter().enumerate().for_each(|(y, &x)| {
+        img_original.put_pixel(x as u32, y as u32, Rgb([255, 0, 0]));
+        if x > 0 {
+            img_original.put_pixel((x - 1) as u32, y as u32, Rgb([255, 0, 0]));
+        }
+        if x > 1 {
+            img_original.put_pixel((x - 2) as u32, y as u32, Rgb([255, 0, 0]));
+        }
+        if x < width - 1 {
+            img_original.put_pixel((x + 1) as u32, y as u32, Rgb([255, 0, 0]));
+        }
+        if x < width - 2 {
+            img_original.put_pixel((x + 2) as u32, y as u32, Rgb([255, 0, 0]));
+        }
+    });
+    img_original
+        .save("./img/Broadway_tower_edit_seam.jpg")
         .unwrap();
 }
 
