@@ -13,7 +13,7 @@ use array::Array2d;
 #[cfg(not(tarpaulin_include))]
 pub fn run(config: parser::Config) -> Result<(), Box<dyn Error>> {
     let img_original = ImageReader::open(&config.infile)?.decode()?.to_rgb8();
-    let img_carved = seamcarve(&img_original, config.new_width, config.new_height)?; // img_original moved into function, no longer valid
+    let img_carved = seamcarve(&img_original, config.new_width, config.new_height)?;
     img_carved.save(config.get_outfile())?;
     Ok(())
 }
