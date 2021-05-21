@@ -86,6 +86,33 @@ fn seam_removal_img() {
 
 #[test]
 #[ignore]
+fn multiple_seam_removal_img() {
+    let mut img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
+        .unwrap()
+        .decode()
+        .unwrap()
+        .to_rgb8();
+    let width = img_original.dimensions().0;
+    let new_width = 957;
+    let vertical_to_remove = width - new_width;
+    let mut positions = rsc::array::positions_from_image(&img_original).unwrap();
+    let mut energy_map = rsc::energy::get_energy_img(&img_original, &positions).unwrap();
+    let mut seam;
+    for _ in 0..vertical_to_remove {
+        seam = rsc::seam::find_vertical_seam(&energy_map);
+        seam.iter().enumerate().for_each(|(y, &x)| {
+            img_original[positions[(x, y)]] = Rgb([255, 0, 0]);
+        });
+        positions.remove_seam(&seam).unwrap();
+        rsc::energy::update_energy_img(&mut energy_map, &img_original, &positions, &seam).unwrap();
+    }
+    img_original
+        .save("./img/Broadway_tower_edit_seam_multiple.jpg")
+        .unwrap();
+}
+
+#[test]
+#[ignore]
 fn no_carving() {
     let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
         .unwrap()
