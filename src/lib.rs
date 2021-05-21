@@ -72,9 +72,8 @@ pub fn seamcarve(
 
     if new_height > height {
         positions = array::positions_from_image(&img_carved)?;
-        energy_map = energy::get_energy_img(&img_carved, &positions)?;
         positions.transpose();
-        energy_map.transpose();
+        energy_map = energy::get_energy_img(&img_carved, &positions)?;
         let horizontal_to_insert = new_height - height;
         img_carved = insert_horizontal(
             &mut energy_map,
