@@ -33,6 +33,7 @@ pub fn find_vertical_seam(energy: &Array2d<u32>) -> Vec<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::array::positions_from_image;
     use crate::energy::get_energy_img;
     use image::{Rgb, RgbImage};
 
@@ -69,8 +70,8 @@ mod tests {
         img.put_pixel(3, 4, Rgb([163, 166, 246]));
         img.put_pixel(4, 4, Rgb([79, 125, 246]));
         img.put_pixel(5, 4, Rgb([211, 201, 98]));
-        let img_array = Array2d::from_image(&img).unwrap();
-        let energy = get_energy_img(&img_array).unwrap();
+        let positions = positions_from_image(&img).unwrap();
+        let energy = get_energy_img(&img, &positions).unwrap();
         let seam = find_vertical_seam(&energy);
         assert_eq!(vec![3, 4, 3, 2, 2], seam);
     }

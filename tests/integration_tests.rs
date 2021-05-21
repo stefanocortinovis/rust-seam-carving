@@ -40,8 +40,8 @@ fn energy_map() {
         .unwrap()
         .to_rgb8();
     let (width, height) = img_original.dimensions();
-    let img_array = rsc::array::Array2d::from_image(&img_original).unwrap();
-    let energy_map = rsc::energy::get_energy_img(&img_array).unwrap();
+    let positions = rsc::array::positions_from_image(&img_original).unwrap();
+    let energy_map = rsc::energy::get_energy_img(&img_original, &positions).unwrap();
     let mut energy_map_scaled = vec![];
     for p in energy_map.raw_data() {
         energy_map_scaled.push(((*p as f64) / SCALING * (u8::MAX as f64)) as u8)
@@ -61,8 +61,8 @@ fn seam_removal_img() {
         .unwrap()
         .to_rgb8();
     let width = img_original.dimensions().0 as usize;
-    let img_array = rsc::array::Array2d::from_image(&img_original).unwrap();
-    let energy_map = rsc::energy::get_energy_img(&img_array).unwrap();
+    let positions = rsc::array::positions_from_image(&img_original).unwrap();
+    let energy_map = rsc::energy::get_energy_img(&img_original, &positions).unwrap();
     let seam = rsc::seam::find_vertical_seam(&energy_map);
     seam.iter().enumerate().for_each(|(y, &x)| {
         img_original.put_pixel(x as u32, y as u32, Rgb([255, 0, 0]));

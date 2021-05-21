@@ -87,7 +87,6 @@ impl<T: Copy> Array2d<T> {
         self.data = new_data;
     }
 
-    // TODO: change implementation when horizontal seam introduced
     pub fn remove_seam(&mut self, seam: &[usize]) -> Result<(), Box<dyn Error>> {
         let (width, height) = self.dimensions();
         if seam.len() != height {
@@ -99,7 +98,6 @@ impl<T: Copy> Array2d<T> {
             .into());
         }
 
-        // Copy to new array instead of modifying in place, approximately 3x faster in release binary
         let mut new_data = Vec::with_capacity(self.size() - height);
         seam.iter().enumerate().for_each(|(y, &to_remove_x)| {
             for x in 0..width {
@@ -116,14 +114,11 @@ impl<T: Copy> Array2d<T> {
 }
 
 impl Array2d<Rgb<u8>> {
-    pub fn from_image(img: &RgbImage) -> Result<Self, &'static str> {
+    pub fn from_image(img: &RgbImage) -> Result<Self, Box<dyn Error>> {
         let (width, height) = img.dimensions();
         let mut data = Vec::with_capacity((width * height) as usize);
         img.pixels().for_each(|&p| data.push(p));
-        Ok(Self {
-            width: width as usize,
-            data,
-        })
+        Self::new(width as usize, data)
     }
 
     pub fn to_image(&self) -> RgbImage {
@@ -136,6 +131,28 @@ impl Array2d<Rgb<u8>> {
         }
         img
     }
+}
+
+pub fn positions_from_image(img: &RgbImage) -> Result<Array2d<(u32, u32)>, Box<dyn Error>> {
+    let (width, height) = img.dimensions();
+    let mut data = Vec::with_capacity((width * height) as usize);
+    for y in 0..height {
+        for x in 0..width {
+            data.push((x, y))
+        }
+    }
+    Array2d::new(width as usize, data)
+}
+
+pub fn filter_image_by_positions(img: &RgbImage, positions: &Array2d<(u32, u32)>) -> RgbImage {
+    let (width, height) = positions.dimensions();
+    let mut new_img = RgbImage::new(width as u32, height as u32);
+    for x in 0..width {
+        for y in 0..height {
+            new_img.put_pixel(x as u32, y as u32, img[positions[(x, y)]])
+        }
+    }
+    new_img
 }
 
 #[cfg(test)]
@@ -238,6 +255,29 @@ mod tests {
                 arr.height()
             )),
             arr.remove_seam(&seam).map_err(|e| format!("{}", e))
+        );
+    }
+
+    #[test]
+    fn from_image() {
+        let mut img = RgbImage::new(2, 2);
+        img.put_pixel(0, 0, Rgb([255, 101, 51]));
+        img.put_pixel(1, 0, Rgb([255, 101, 153]));
+        img.put_pixel(0, 1, Rgb([255, 153, 51]));
+        img.put_pixel(1, 1, Rgb([255, 153, 153]));
+        let img_array = Array2d::from_image(&img).unwrap();
+        assert_eq!(
+            Array2d::new(
+                2,
+                vec![
+                    Rgb([255, 101, 51]),
+                    Rgb([255, 101, 153]),
+                    Rgb([255, 153, 51]),
+                    Rgb([255, 153, 153])
+                ]
+            )
+            .unwrap(),
+            img_array
         );
     }
 

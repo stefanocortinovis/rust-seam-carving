@@ -1,17 +1,20 @@
 use std::error::Error;
 use std::mem;
 
-use image::{Pixel, Rgb};
+use image::{Pixel, RgbImage};
 use num_traits::ToPrimitive;
 
 use crate::array::Array2d;
 
-pub fn get_energy_img(img: &Array2d<Rgb<u8>>) -> Result<Array2d<u32>, Box<dyn Error>> {
-    let (width, height) = img.dimensions();
-    let mut e = vec![];
+pub fn get_energy_img(
+    img: &RgbImage,
+    positions: &Array2d<(u32, u32)>,
+) -> Result<Array2d<u32>, Box<dyn Error>> {
+    let (width, height) = positions.dimensions();
+    let mut e = Vec::with_capacity(width * height);
     for y in 0..height {
         for x in 0..width {
-            e.push(get_energy_pixel(img, x, y))
+            e.push(get_energy_pixel(img, positions, x, y))
         }
     }
     Array2d::new(width as usize, e)
@@ -19,11 +22,12 @@ pub fn get_energy_img(img: &Array2d<Rgb<u8>>) -> Result<Array2d<u32>, Box<dyn Er
 
 pub fn update_energy_img(
     energy: &mut Array2d<u32>,
-    img: &Array2d<Rgb<u8>>,
+    img: &RgbImage,
+    positions: &Array2d<(u32, u32)>,
     seam: &[usize],
 ) -> Result<(), Box<dyn Error>> {
     energy.remove_seam(&seam)?;
-    let (width, height) = img.dimensions(); // seam already removed
+    let (width, height) = positions.dimensions(); // seam already removed
     let (mut first, mut last) = (seam[0], seam[height - 1]); // fine even if last on right boundary
     if first > last {
         mem::swap(&mut first, &mut last);
@@ -31,25 +35,25 @@ pub fn update_energy_img(
     for (y, &x) in seam.iter().enumerate() {
         if (y == 0) || (y == height - 1) {
             for i in first..last {
-                energy[(i, y)] = get_energy_pixel(img, i, y);
+                energy[(i, y)] = get_energy_pixel(img, positions, i, y);
             }
         }
         let left = x.checked_sub(1).unwrap_or(width - 1);
         let right = x % width;
-        energy[(left, y)] = get_energy_pixel(img, left, y);
-        energy[(right, y)] = get_energy_pixel(img, right, y);
+        energy[(left, y)] = get_energy_pixel(img, positions, left, y);
+        energy[(right, y)] = get_energy_pixel(img, positions, right, y);
     }
     Ok(())
 }
 
-fn get_energy_pixel(img: &Array2d<Rgb<u8>>, x: usize, y: usize) -> u32 {
-    let (width, height) = img.dimensions();
+fn get_energy_pixel(img: &RgbImage, positions: &Array2d<(u32, u32)>, x: usize, y: usize) -> u32 {
+    let (width, height) = positions.dimensions();
     let above = y.checked_sub(1).unwrap_or(height - 1);
     let below = (y + 1) % height;
     let left = x.checked_sub(1).unwrap_or(width - 1);
     let right = (x + 1) % width;
-    squared_diff_pixels(img[(x, above)], img[(x, below)])
-        + squared_diff_pixels(img[(left, y)], img[(right, y)])
+    squared_diff_pixels(img[positions[(x, above)]], img[positions[(x, below)]])
+        + squared_diff_pixels(img[positions[(left, y)]], img[positions[(right, y)]])
 }
 
 fn squared_diff_pixels<T: Pixel>(pixel_1: T, pixel_2: T) -> u32 {
@@ -72,7 +76,8 @@ fn squared_diff_channels<T: ToPrimitive>(channel_1: &T, channel_2: &T) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use image::{Rgb, RgbImage};
+    use crate::array::positions_from_image;
+    use image::Rgb;
 
     #[test]
     fn energy_computation_1() {
@@ -89,8 +94,8 @@ mod tests {
         img.put_pixel(0, 3, Rgb([255, 255, 51]));
         img.put_pixel(1, 3, Rgb([255, 255, 153]));
         img.put_pixel(2, 3, Rgb([255, 255, 255]));
-        let img_array = Array2d::from_image(&img).unwrap();
-        let energy = get_energy_img(&img_array).unwrap();
+        let positions = positions_from_image(&img).unwrap();
+        let energy = get_energy_img(&img, &positions).unwrap();
 
         #[rustfmt::skip]
         assert_eq!(
@@ -137,8 +142,8 @@ mod tests {
         img.put_pixel(3, 4, Rgb([163, 166, 246]));
         img.put_pixel(4, 4, Rgb([79, 125, 246]));
         img.put_pixel(5, 4, Rgb([211, 201, 98]));
-        let img_array = Array2d::from_image(&img).unwrap();
-        let energy = get_energy_img(&img_array).unwrap();
+        let positions = positions_from_image(&img).unwrap();
+        let energy = get_energy_img(&img, &positions).unwrap();
 
         #[rustfmt::skip]
         assert_eq!(
@@ -168,13 +173,12 @@ mod tests {
         img.put_pixel(0, 3, Rgb([255, 255, 51]));
         img.put_pixel(1, 3, Rgb([255, 255, 153]));
         img.put_pixel(2, 3, Rgb([255, 255, 255]));
-        let mut img_array = Array2d::from_image(&img).unwrap();
+        let mut positions = positions_from_image(&img).unwrap();
         let seam = [0, 1, 2, 1];
-        let mut energy_updated = get_energy_img(&img_array).unwrap();
-        img_array.remove_seam(&seam).unwrap();
-        let energy_computed = get_energy_img(&img_array).unwrap();
-        update_energy_img(&mut energy_updated, &img_array, &seam).unwrap();
-
+        let mut energy_updated = get_energy_img(&img, &positions).unwrap();
+        positions.remove_seam(&seam).unwrap();
+        let energy_computed = get_energy_img(&img, &positions).unwrap();
+        update_energy_img(&mut energy_updated, &img, &positions, &seam).unwrap();
         assert_eq!(energy_computed, energy_updated);
     }
     #[test]
@@ -211,28 +215,28 @@ mod tests {
         img.put_pixel(4, 4, Rgb([79, 125, 246]));
         img.put_pixel(5, 4, Rgb([211, 201, 98]));
 
-        let mut img_array = Array2d::from_image(&img).unwrap();
+        let mut positions = positions_from_image(&img).unwrap();
         let seam_1 = [0, 1, 2, 3, 4];
-        let mut energy_updated = get_energy_img(&img_array).unwrap();
-        img_array.remove_seam(&seam_1).unwrap();
-        let energy_computed = get_energy_img(&img_array).unwrap();
-        update_energy_img(&mut energy_updated, &img_array, &seam_1).unwrap();
+        let mut energy_updated = get_energy_img(&img, &positions).unwrap();
+        positions.remove_seam(&seam_1).unwrap();
+        let energy_computed = get_energy_img(&img, &positions).unwrap();
+        update_energy_img(&mut energy_updated, &img, &positions, &seam_1).unwrap();
         assert_eq!(energy_computed, energy_updated);
 
-        let mut img_array = Array2d::from_image(&img).unwrap();
+        let mut positions = positions_from_image(&img).unwrap();
         let seam_2 = [4, 3, 2, 1, 0];
-        let mut energy_updated = get_energy_img(&img_array).unwrap();
-        img_array.remove_seam(&seam_2).unwrap();
-        let energy_computed = get_energy_img(&img_array).unwrap();
-        update_energy_img(&mut energy_updated, &img_array, &seam_2).unwrap();
+        let mut energy_updated = get_energy_img(&img, &positions).unwrap();
+        positions.remove_seam(&seam_2).unwrap();
+        let energy_computed = get_energy_img(&img, &positions).unwrap();
+        update_energy_img(&mut energy_updated, &img, &positions, &seam_2).unwrap();
         assert_eq!(energy_computed, energy_updated);
 
-        let mut img_array = Array2d::from_image(&img).unwrap();
+        let mut positions = positions_from_image(&img).unwrap();
         let seam_3 = [5, 4, 3, 2, 1];
-        let mut energy_updated = get_energy_img(&img_array).unwrap();
-        img_array.remove_seam(&seam_3).unwrap();
-        let energy_computed = get_energy_img(&img_array).unwrap();
-        update_energy_img(&mut energy_updated, &img_array, &seam_3).unwrap();
+        let mut energy_updated = get_energy_img(&img, &positions).unwrap();
+        positions.remove_seam(&seam_3).unwrap();
+        let energy_computed = get_energy_img(&img, &positions).unwrap();
+        update_energy_img(&mut energy_updated, &img, &positions, &seam_3).unwrap();
         assert_eq!(energy_computed, energy_updated);
     }
 }
