@@ -1,3 +1,6 @@
+use image::{Pixel, Rgb, RgbImage};
+use num_traits::ToPrimitive;
+
 use crate::array::Array2d;
 
 pub fn find_vertical_seam(energy: &Array2d<u32>) -> Vec<usize> {
@@ -28,6 +31,90 @@ pub fn find_vertical_seam(energy: &Array2d<u32>) -> Vec<usize> {
         seam.push(path[(seam[y], y)])
     }
     seam
+}
+
+pub fn insert_vertical_seams(img: &RgbImage, seams: &[Vec<usize>]) -> RgbImage {
+    let (width, height) = img.dimensions();
+    let to_insert = seams[0].len() as u32;
+    let mut new_img = RgbImage::new(width + to_insert, height);
+    let mut already_inserted = 0;
+    for (y, to_insert_xs) in seams.iter().enumerate() {
+        let mut to_insert_xs_sorted = to_insert_xs.clone();
+        to_insert_xs_sorted.sort_unstable();
+        for x in 0..width {
+            if (already_inserted < to_insert)
+                && (x == to_insert_xs_sorted[already_inserted as usize] as u32)
+            {
+                let left = x.saturating_sub(1);
+                let right = (x + 1) % width;
+                new_img.put_pixel(
+                    x + already_inserted,
+                    y as u32,
+                    avg_pixel(*img.get_pixel(left, y as u32), *img.get_pixel(x, y as u32)),
+                );
+                already_inserted += 1;
+                new_img.put_pixel(
+                    x + already_inserted,
+                    y as u32,
+                    avg_pixel(*img.get_pixel(x, y as u32), *img.get_pixel(right, y as u32)),
+                );
+            } else {
+                new_img.put_pixel(x + already_inserted, y as u32, *img.get_pixel(x, y as u32));
+            }
+        }
+        already_inserted = 0;
+    }
+    new_img
+}
+
+pub fn insert_horizontal_seams(img: &RgbImage, seams: &[Vec<usize>]) -> RgbImage {
+    let (width, height) = img.dimensions();
+    let to_insert = seams[0].len() as u32;
+    let mut new_img = RgbImage::new(width, height + to_insert);
+    let mut already_inserted = 0;
+    for (x, to_insert_ys) in seams.iter().enumerate() {
+        let mut to_insert_ys_sorted = to_insert_ys.clone();
+        to_insert_ys_sorted.sort_unstable();
+        for y in 0..height {
+            if (already_inserted < to_insert)
+                && (y == to_insert_ys_sorted[already_inserted as usize] as u32)
+            {
+                let above = y.saturating_sub(1);
+                let below = (y + 1) % height;
+                new_img.put_pixel(
+                    x as u32,
+                    y + already_inserted,
+                    avg_pixel(*img.get_pixel(x as u32, above), *img.get_pixel(x as u32, y)),
+                );
+                already_inserted += 1;
+                new_img.put_pixel(
+                    x as u32,
+                    y + already_inserted,
+                    avg_pixel(*img.get_pixel(x as u32, y), *img.get_pixel(x as u32, below)),
+                );
+            } else {
+                new_img.put_pixel(x as u32, y + already_inserted, *img.get_pixel(x as u32, y));
+            }
+        }
+        already_inserted = 0;
+    }
+    new_img
+}
+
+fn avg_pixel<T: Pixel>(pixel_1: T, pixel_2: T) -> Rgb<u8> {
+    let (channels_1, channels_2) = (pixel_1.channels(), pixel_2.channels());
+    let new_channels = channels_1
+        .iter()
+        .zip(channels_2.iter())
+        .map(|(ch1, ch2)| avg_channel(ch1, ch2))
+        .collect::<Vec<u8>>();
+    Rgb([new_channels[0], new_channels[1], new_channels[2]])
+}
+
+fn avg_channel<T: ToPrimitive>(channel_1: &T, channel_2: &T) -> u8 {
+    let channel_1 = channel_1.to_u8().unwrap_or(u8::MAX);
+    let channel_2 = channel_2.to_u8().unwrap_or(u8::MAX);
+    (channel_1 / 2) + (channel_2 / 2) + ((channel_1 % 2 + channel_2 % 2) / 2) // average without u8 overflow
 }
 
 #[cfg(test)]

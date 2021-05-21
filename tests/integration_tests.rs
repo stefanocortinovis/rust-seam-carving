@@ -6,29 +6,42 @@ use rsc;
 const SCALING: f64 = 2000f64;
 
 #[test]
-#[should_panic]
-fn wider() {
+fn no_carving() {
     let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
         .unwrap()
         .decode()
         .unwrap()
         .to_rgb8();
-    let (original_width, original_height) = img_original.dimensions();
-    let (new_width, new_height) = (original_width + 1000, original_height);
-    rsc::seamcarve(&img_original, new_width, new_height).unwrap();
+    let (new_width, new_height) = img_original.dimensions();
+    assert_eq!(
+        img_original,
+        rsc::seamcarve(&img_original, new_width, new_height).unwrap()
+    );
+}
+#[test]
+fn carve_both_fast() {
+    let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
+        .unwrap()
+        .decode()
+        .unwrap()
+        .to_rgb8();
+    let (width, height) = img_original.dimensions();
+    let (new_width, new_height) = (width - 1, height - 1);
+    let img_carved = rsc::seamcarve(&img_original, new_width, new_height).unwrap();
+    assert_eq!((new_width, new_height), img_carved.dimensions());
 }
 
 #[test]
-#[should_panic]
-fn taller() {
+fn insert_both_fast() {
     let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
         .unwrap()
         .decode()
         .unwrap()
         .to_rgb8();
-    let (original_width, original_height) = img_original.dimensions();
-    let (new_width, new_height) = (original_width, original_height + 1000);
-    rsc::seamcarve(&img_original, new_width, new_height).unwrap();
+    let (width, height) = img_original.dimensions();
+    let (new_width, new_height) = (width + 1, height + 1);
+    let img_carved = rsc::seamcarve(&img_original, new_width, new_height).unwrap();
+    assert_eq!((new_width, new_height), img_carved.dimensions());
 }
 
 #[test]
@@ -86,7 +99,7 @@ fn seam_removal_img() {
 
 #[test]
 #[ignore]
-fn multiple_seam_removal_img() {
+fn seam_removal_multiple_img() {
     let mut img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
         .unwrap()
         .decode()
@@ -109,21 +122,6 @@ fn multiple_seam_removal_img() {
     img_original
         .save("./img/Broadway_tower_edit_seam_multiple.jpg")
         .unwrap();
-}
-
-#[test]
-#[ignore]
-fn no_carving() {
-    let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
-        .unwrap()
-        .decode()
-        .unwrap()
-        .to_rgb8();
-    let (new_width, new_height) = img_original.dimensions();
-    assert_eq!(
-        img_original,
-        rsc::seamcarve(&img_original, new_width, new_height).unwrap()
-    );
 }
 
 #[test]
@@ -176,14 +174,49 @@ fn carve_both() {
 }
 
 #[test]
-fn carve_both_fast() {
+#[ignore]
+fn insert_width() {
     let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
         .unwrap()
         .decode()
         .unwrap()
         .to_rgb8();
-    let (width, height) = img_original.dimensions();
-    let (new_width, new_height) = (width - 1, height - 1);
+    let (new_width, new_height) = (1700, img_original.dimensions().1);
     let img_carved = rsc::seamcarve(&img_original, new_width, new_height).unwrap();
+    img_carved
+        .save("./img/Broadway_tower_edit_insert_width.jpg")
+        .unwrap();
+    assert_eq!((new_width, new_height), img_carved.dimensions());
+}
+
+#[test]
+#[ignore]
+fn insert_height() {
+    let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
+        .unwrap()
+        .decode()
+        .unwrap()
+        .to_rgb8();
+    let (new_width, new_height) = (img_original.dimensions().0, 1200);
+    let img_carved = rsc::seamcarve(&img_original, new_width, new_height).unwrap();
+    img_carved
+        .save("./img/Broadway_tower_edit_insert_height.jpg")
+        .unwrap();
+    assert_eq!((new_width, new_height), img_carved.dimensions());
+}
+
+#[test]
+#[ignore]
+fn insert_both() {
+    let img_original = ImageReader::open("./img/Broadway_tower_edit.jpg")
+        .unwrap()
+        .decode()
+        .unwrap()
+        .to_rgb8();
+    let (new_width, new_height) = (1920, 1080);
+    let img_carved = rsc::seamcarve(&img_original, new_width, new_height).unwrap();
+    img_carved
+        .save("./img/Broadway_tower_edit_insert_both.jpg")
+        .unwrap();
     assert_eq!((new_width, new_height), img_carved.dimensions());
 }
