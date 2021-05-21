@@ -23,8 +23,28 @@ pub fn seamcarve(
     new_width: u32,
     new_height: u32,
 ) -> Result<RgbImage, Box<dyn Error>> {
+    let (width, height) = img.dimensions();
+    if new_width == 0 {
+        return Err(format!("new_width must be positive, got {}", new_width).into());
+    } else if new_width >= 2 * width {
+        return Err(format!(
+            "new_width  cannot be twice the original width or more, got {} and {}",
+            new_width, width
+        )
+        .into());
+    }
+
+    if new_height == 0 {
+        return Err(format!("new_height must be positive, got {}", new_height).into());
+    } else if new_height >= 2 * height {
+        return Err(format!(
+            "new_height cannot be twice the original height or more, got {} and {}",
+            new_height, height
+        )
+        .into());
+    }
+
     let mut img_carved = img.clone();
-    let (width, height) = img_carved.dimensions();
 
     if (new_width == width) && (new_height == height) {
         return Ok(img_carved);
