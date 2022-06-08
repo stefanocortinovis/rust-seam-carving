@@ -26,7 +26,7 @@ pub fn update_energy_img(
     positions: &Array2d<(u32, u32)>,
     seam: &[usize],
 ) -> Result<(), Box<dyn Error>> {
-    energy.remove_seam(&seam)?;
+    energy.remove_seam(seam)?;
     let (width, height) = positions.dimensions(); // seam already removed
     let (mut first, mut last) = (seam[0], seam[height - 1]); // fine even if last on right boundary
     if first > last {
