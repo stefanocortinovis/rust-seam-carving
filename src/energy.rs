@@ -17,7 +17,7 @@ pub fn get_energy_img(
             e.push(get_energy_pixel(img, positions, x, y))
         }
     }
-    Array2d::new(width as usize, e)
+    Array2d::new(width, e)
 }
 
 pub fn update_energy_img(
